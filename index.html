@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Fuel Log - MCIA</title>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+      background: url('https://hips.hearstapps.com/hmg-prod/images/2025-toyota-tacoma-prerunner-101-681b80dd44cde.jpg?crop=0.741xw:0.624xh;0.135xw,0.283xh&resize=1200:*') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+      position: relative;
+      z-index: 0;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    /* Dark overlay for readability */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: -1;
+    }
+
+    h1, h2 {
+      text-align: center;
+      margin: 0 0 15px 0;
+    }
+
+    .form, .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+
+    input, button, select {
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255, 255, 255, 0.9);
+      color: black;
+      margin-top: 20px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    #vehicleSelector {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      .form {
+        flex-direction: column;
+        align-items: center;
+      }
+      input, button, select {
+        width: 90%;
+      }
+      table {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Mauritius Cane Industry Authority</h1>
+  <h2>Fuel Log System</h2>
+
+  <div id="vehicleSelector">
+    <label for="vehicle">Select Vehicle: </label>
+    <select id="vehicle" onchange="loadVehicleData()">
+      <option value="">-- Select Vehicle --</option>
+      <option value="MCIA001">MCIA001</option>
+      <option value="MCIA002">MCIA002</option>
+      <option value="MCIA003">MCIA003</option>
+      <option value="Other">Other...</option>
+    </select>
+    <input id="customVehicle" placeholder="Enter vehicle no" style="display:none;" onblur="customVehicleEntered()" />
+  </div>
+
+  <div class="form">
+    <input id="date" type="date" placeholder="Date of Refuel" />
+    <input id="days" type="number" placeholder="No. of Days After Refill" />
+    <input id="operator" type="text" placeholder="Operator Name" />
+    <input id="driver" type="text" placeholder="Driver Name" />
+    <input id="mileage" type="number" placeholder="Mileage at Refuel (km)" />
+    <input id="distance" type="number" placeholder="Distance Covered (km)" />
+    <input id="liters" type="number" placeholder="Fuel Filled (L)" />
+    <button id="addBtn">Add Entry</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Vehicle</th>
+        <th>Date</th>
+        <th>Days</th>
+        <th>Operator</th>
+        <th>Driver</th>
+        <th>Mileage (km)</th>
+        <th>Distance (km)</th>
+        <th>Fuel (L)</th>
+        <th>Km/L</th>
+      </tr>
+    </thead>
+    <tbody id="logBody"></tbody>
+  </table>
+
+  <script>
+    let currentVehicle = "";
+
+    document.getElementById("vehicle").addEventListener("change", function () {
+      if (this.value === "Other") {
+        document.getElementById("customVehicle").style.display = "inline";
+        document.getElementById("customVehicle").focus();
+      } else {
+        currentVehicle = this.value;
+        document.getElementById("customVehicle").style.display = "none";
+        loadVehicleData();
+      }
+    });
+
+    function customVehicleEntered() {
+      currentVehicle = document.getElementById("customVehicle").value.trim();
+      if (currentVehicle) {
+        loadVehicleData();
+      }
+    }
+
+    document.getElementById("addBtn").addEventListener("click", function () {
+      if (!currentVehicle) {
+        alert("Please select or enter a vehicle number.");
+        return;
+      }
+
+      const date = document.getElementById("date").value;
+      const days = document.getElementById("days").value;
+      const operator = document.getElementById("operator").value;
+      const driver = document.getElementById("driver").value;
+      const mileage = parseFloat(document.getElementById("mileage").value);
+      const distance = parseFloat(document.getElementById("distance").value);
+      const liters = parseFloat(document.getElementById("liters").value);
+
+      if (
+        !date ||
+        !days ||
+        !operator ||
+        !driver ||
+        isNaN(mileage) ||
+        isNaN(distance) ||
+        isNaN(liters)
+      ) {
+        alert("Please fill in all fields correctly.");
+        return;
+      }
+
+      const kmpl = (distance / liters).toFixed(2);
+      const entry = {
+        vehicle: currentVehicle,
+        date,
+        days,
+        operator,
+        driver,
+        mileage,
+        distance,
+        liters,
+        kmpl,
+      };
+
+      // Save to localStorage
+      let logs =
+        JSON.parse(localStorage.getItem(`fuelLogs_${currentVehicle}`)) || [];
+      logs.push(entry);
+      localStorage.setItem(`fuelLogs_${currentVehicle}`, JSON.stringify(logs));
+
+      addRow(entry);
+      clearInputs();
+    });
+
+    function loadVehicleData() {
+      const logBody = document.getElementById("logBody");
+      logBody.innerHTML = "";
+      const logs =
+        JSON.parse(localStorage.getItem(`fuelLogs_${currentVehicle}`)) || [];
+      logs.forEach((entry) => addRow(entry));
+    }
+
+    function addRow(entry) {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${entry.vehicle}</td>
+        <td>${entry.date}</td>
+        <td>${entry.days}</td>
+        <td>${entry.operator}</td>
+        <td>${entry.driver}</td>
+        <td>${entry.mileage}</td>
+        <td>${entry.distance}</td>
+        <td>${entry.liters}</td>
+        <td>${entry.kmpl}</td>
+      `;
+      document.getElementById("logBody").appendChild(row);
+    }
+
+    function clearInputs() {
+      document.getElementById("date").value = "";
+      document.getElementById("days").value = "";
+      document.getElementById("operator").value = "";
+      document.getElementById("driver").value = "";
+      document.getElementById("mileage").value = "";
+      document.getElementById("distance").value = "";
+      document.getElementById("liters").value = "";
+    }
+
+    window.onload = function () {
+      const defaultSelect = document.getElementById("vehicle");
+      if (defaultSelect.value) {
+        currentVehicle = defaultSelect.value;
+        loadVehicleData();
+      }
+    };
+  </script>
+</body>
+</html>
