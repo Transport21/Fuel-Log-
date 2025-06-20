@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Fuel Log - MCIA</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 15px 10px;
+      background: url('https://hips.hearstapps.com/hmg-prod/images/2025-toyota-tacoma-prerunner-101-681b80dd44cde.jpg?crop=0.741xw:0.624xh;0.135xw,0.283xh&resize=1200:*') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+      position: relative;
+      z-index: 0;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden; /* prevent horizontal scroll from body */
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: -1;
+    }
+
+    h1, h2 {
+      text-align: center;
+      margin: 0 0 15px 0;
+    }
+
+    .form, .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+
+    input, button, select, textarea {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 40px;
+      max-height: 80px;
+      min-width: 300px;
+      max-width: 400px;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Wrapper for horizontal scroll on small screens */
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255, 255, 255, 0.9);
+      color: black;
+      margin-top: 20px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      table-layout: fixed; /* keep column widths stable */
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+      vertical-align: middle;
+      word-wrap: break-word;
+    }
+
+    #vehicleSelector {
+      margin-bottom: 20px;
+      text-align: center;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+
+    #loggedInUser {
+      text-align: center;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    #loginOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    #loginBox {
+      background: white;
+      color: black;
+      padding: 30px 20px;
+      border-radius: 10px;
+      width: 320px;
+      max-width: 90vw; /* responsive width */
+      box-sizing: border-box;
+      text-align: center;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+
+    #loginBox input {
+      width: 100%;
+      margin-bottom: 15px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    #loginBox button {
+      width: 100%;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+
+    #loginBox button:hover {
+      background-color: #0056b3;
+    }
+
+    #exportBtnContainer {
+      text-align: right;
+      max-width: 1200px;
+      margin: 10px auto;
+      padding-right: 10px;
+    }
+
+    #accessLogContainer {
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.9);
+      color: black;
+      border-radius: 8px;
+      font-family: Arial, sans-serif;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    #accessLogContainer table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    #accessLogContainer th, #accessLogContainer td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    #accessLogContainer th {
+      background-color: #007bff;
+      color: white;
+    }
+
+    @media (max-width: 900px) {
+      .form {
+        flex-direction: column;
+        align-items: center;
+      }
+      input, button, select, textarea {
+        width: 95%;
+        max-width: 400px;
+      }
+      table {
+        font-size: 14px;
+      }
+      #loginBox {
+        width: 90%;
+      }
+      #exportBtnContainer {
+        padding-right: 0;
+      }
+    }
+
+    @media (max-width: 600px) {
+      input, button, select, textarea {
+        width: 100%;
+        max-width: none;
+      }
+      table {
+        font-size: 13px;
+      }
+      #vehicleSelector label, #vehicleSelector select, #customVehicle {
+        display: block;
+        width: 100%;
+        max-width: none;
+        margin-bottom: 10px;
+      }
+      #exportBtnContainer {
+        text-align: center;
+        padding-right: 0;
+      }
+      .action-buttons button {
+        margin: 2px 0;
+        width: 48%;
+        box-sizing: border-box;
+      }
+    }
+
+    .action-buttons button {
+      margin: 0 2px;
+      padding: 5px 8px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Login Overlay -->
+  <div id="loginOverlay">
+    <div id="loginBox">
+      <h2>Please log in</h2>
+      <input type="text" id="loginName" placeholder="Enter your name" autocomplete="off" />
+      <button id="loginBtn">Login</button>
+    </div>
+  </div>
+
+  <!-- Main Content (hidden until login) -->
+  <div id="mainContent" style="display:none;">
+    <div id="loggedInUser" style="display:none;">
+      Logged in as: <span id="userNameDisplay"></span> 
+      <button id="logoutBtn" style="margin-left: 15px;">Logout</button>
+    </div>
+
+    <h1>Mauritius Cane Industry Authority</h1>
+    <h2>Fuel Log System</h2>
+
+    <div id="vehicleSelector">
+      <label for="vehicle">Select Vehicle: </label>
+      <select id="vehicle" onchange="onVehicleChange()">
+        <option value="">-- Select Vehicle --</option>
+        <option value="770 MR 03- FSA ST PIERRE">770 MR 03- FSA ST PIERRE</option>
+        <option value="2881 SP 94">2881 SP 94</option>
+        <option value="3391 OC 95">3391 OC 95</option>
+        <option value="3716 AG 04">3716 AG 04</option>
+        <option value="5253 DC 04">5253 DC 04</option>
+        <option value="820 FB 06">820 FB 06</option>
+        <option value="3104 JU 07">3104 JU 07</option>
+        <option value="548 JN 08">548 JN 08</option>
+        <option value="5827 OC 08">5827 OC 08</option>
+        <option value="5923 DC 09">5923 DC 09</option>
+        <option value="6110 NV 10">6110 NV 10</option>
+        <option value="10070 NV 17">10070 NV 17</option>
+        <option value="10072 NV 17">10072 NV 17</option>
+        <option value="1566 FB 17">1566 FB 17</option>
+        <option value="9960 OC 18">9960 OC 18</option>
+        <option value="1401 FB 19">1401 FB 19</option>
+        <option value="1411 FB 23">1411 FB 23</option>
+        <option value="1860 FB 22">1860 FB 22</option>
+        <option value="6106 JU 22">6106 JU 22</option>
+        <option value="9557 DC 21">9557 DC 21</option>
+        <option value="2574 JU 98">2574 JU 98</option>
+        <option value="2874 JU 99">2874 JU 99</option>
+        <option value="5254 DC 04">5254 DC 04</option>
+        <option value="Other">Other...</option>
+      </select>
+      <input id="customVehicle" placeholder="Enter vehicle no" style="display:none; margin-left: 10px;" />
+    </div>
+
+    <div class="form">
+      <input id="date" type="date" placeholder="Date of Refuel" />
+      <input id="days" type="number" placeholder="No. of Days After Refill" />
+      <input id="operator" type="text" placeholder="Operator Name" />
+      <input id="driver" type="text" placeholder="Driver Name" />
+      <input id="mileage" type="number" placeholder="Mileage at Refuel (km)" />
+      <input id="distance" type="number" placeholder="Distance Covered (km)" />
+      <input id="liters" type="number" placeholder="Fuel Filled (L)" />
+      <textarea id="notes" placeholder="Notes (optional)"></textarea>
+      <button id="addBtn">Add Entry</button>
+      <button id="cancelEditBtn" style="display:none; margin-left:10px; background:#6c757d;">Cancel Edit</button>
+    </div>
+
+    <div id="exportBtnContainer">
+      <button onclick="exportToExcel('logBody', 'FuelLog_MCIA')">Export to Excel</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Vehicle</th>
+            <th>Date</th>
+            <th>Days</th>
+            <th>Operator</th>
+            <th>Driver</th>
+            <th>Mileage (km)</th>
+            <th>Distance (km)</th>
+            <th>Fuel (L)</th>
+            <th>Km/L</th>
+            <th>Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="logBody"></tbody>
+      </table>
+    </div>
+
+    <div id="accessLogContainer"></div>
+  </div>
+
+  <script>
+    let currentVehicle = "";
+    let editIndex = null;
+
+    const loginOverlay = document.getElementById('loginOverlay');
+    const mainContent = document.getElementById('mainContent');
+    const loggedInUserDiv = document.getElementById('loggedInUser');
+    const userNameDisplay = document.getElementById('userNameDisplay');
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const loginNameInput = document.getElementById('loginName');
+    const accessLogContainer = document.getElementById('accessLogContainer');
+
+    const vehicleSelect = document.getElementById('vehicle');
+    const customVehicleInput = document.getElementById('customVehicle');
+
+    const dateInput = document.getElementById('date');
+    const daysInput = document.getElementById('days');
+    const operatorInput = document.getElementById('operator');
+    const driverInput = document.getElementById('driver');
+    const mileageInput = document.getElementById('mileage');
+    const distanceInput = document.getElementById('distance');
+    const litersInput = document.getElementById('liters');
+    const notesInput = document.getElementById('notes');
+
+    const addBtn = document.getElementById('addBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+    // Login logic
+    loginBtn.addEventListener('click', () => {
+      const name = loginNameInput.value.trim();
+      if (!name) {
+        alert("Please enter your name to login.");
+        return;
+      }
+      sessionStorage.setItem('loggedInName', name);
+      checkLogin();
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      sessionStorage.removeItem('loggedInName');
+      location.reload();
+    });
+
+    function checkLogin() {
+      const loggedInName = sessionStorage.getItem('loggedInName');
+      if (loggedInName && loggedInName.trim() !== '') {
+        loginOverlay.style.display = 'none';
+        mainContent.style.display = 'block';
+        loggedInUserDiv.style.display = 'block';
+        userNameDisplay.textContent = loggedInName;
+        if (!sessionStorage.getItem('hasLoggedAccess')) {
+          logAccess(loggedInName);
+          sessionStorage.setItem('hasLoggedAccess', 'true');
+        }
+        displayAccessLog();
+      } else {
+        loginOverlay.style.display = 'flex';
+        mainContent.style.display = 'none';
+        loggedInUserDiv.style.display = 'none';
+        accessLogContainer.innerHTML = '';
+        sessionStorage.removeItem('hasLoggedAccess');
+      }
+    }
+
+    // Access log
+    function logAccess(name) {
+      const now = new Date();
+      const timestamp = now.toLocaleString();
+      let accessLog = JSON.parse(localStorage.getItem('accessLog')) || [];
+      accessLog.push({ name, timestamp });
+      localStorage.setItem('accessLog', JSON.stringify(accessLog));
+    }
+
+    function displayAccessLog() {
+      let accessLog = JSON.parse(localStorage.getItem('accessLog')) || [];
+      if (accessLog.length === 0) {
+        accessLogContainer.innerHTML = "<h3>Access Log</h3><p>No accesses recorded yet.</p>";
+        return;
+      }
+      let html = "<h3>Access Log (Last 10 Accesses)</h3><table>";
+      html += "<thead><tr><th>Name</th><th>Timestamp</th></tr></thead><tbody>";
+      for (let entry of accessLog.slice(-10).reverse()) {
+        html += `<tr><td>${entry.name}</td><td>${entry.timestamp}</td></tr>`;
+      }
+      html += "</tbody></table>";
+      accessLogContainer.innerHTML = html;
+    }
+
+    // Vehicle selector change
+    vehicleSelect.addEventListener('change', () => {
+      if (vehicleSelect.value === 'Other') {
+        customVehicleInput.style.display = 'inline-block';
+        customVehicleInput.value = "";
+        customVehicleInput.focus();
+        currentVehicle = "";
+        clearEntriesTable();
+      } else {
+        customVehicleInput.style.display = 'none';
+        currentVehicle = vehicleSelect.value;
+        loadVehicleData();
+      }
+      resetEditState();
+      clearInputs();
+    });
+
+    customVehicleInput.addEventListener('blur', () => {
+      currentVehicle = customVehicleInput.value.trim();
+      loadVehicleData();
+      resetEditState();
+      clearInputs();
+    });
+
+    // Clear table body
+    function clearEntriesTable() {
+      document.getElementById('logBody').innerHTML = "";
+    }
+
+    // Load entries for current vehicle
+    function loadVehicleData() {
+      clearEntriesTable();
+      if (currentVehicle === null || currentVehicle === undefined) currentVehicle = "";
+      const logs = JSON.parse(localStorage.getItem('fuelLogs_' + currentVehicle)) || [];
+      logs.forEach((entry, idx) => addRow(entry, idx));
+    }
+
+    // Add a row to the table
+    function addRow(entry, index) {
+      const tbody = document.getElementById('logBody');
+      const tr = document.createElement('tr');
+
+      const kmpl = (entry.distance && entry.liters) ? (entry.distance / entry.liters).toFixed(2) : "";
+
+      tr.innerHTML = `
+        <td>${entry.vehicle || ""}</td>
+        <td>${entry.date}</td>
+        <td>${entry.days || ""}</td>
+        <td>${entry.operator || ""}</td>
+        <td>${entry.driver || ""}</td>
+        <td>${entry.mileage || ""}</td>
+        <td>${entry.distance || ""}</td>
+        <td>${entry.liters}</td>
+        <td>${kmpl}</td>
+        <td>${entry.notes || ""}</td>
+        <td class="action-buttons">
+          <button onclick="editEntry(${index})">Edit</button>
+          <button onclick="deleteEntry(${index})" style="background:#dc3545;">Delete</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    // Add or update entry
+    addBtn.addEventListener('click', () => {
+      const date = dateInput.value;
+      const liters = parseFloat(litersInput.value);
+
+      if (!date) {
+        alert("Date of refuel is required.");
+        return;
+      }
+
+      if (isNaN(liters) || liters <= 0) {
+        alert("Please enter a valid quantity of fuel in liters.");
+        return;
+      }
+
+      // Get other optional fields
+      const days = daysInput.value;
+      const operator = operatorInput.value.trim();
+      const driver = driverInput.value.trim();
+      const mileage = mileageInput.value;
+      const distance = distanceInput.value;
+      const notes = notesInput.value.trim();
+
+      let vehicle = currentVehicle;
+      if (!vehicle) {
+        if (customVehicleInput.style.display === 'inline-block') {
+          vehicle = customVehicleInput.value.trim();
+        } else {
+          alert("Please select or enter a vehicle.");
+          return;
+        }
+      }
+
+      const logs = JSON.parse(localStorage.getItem('fuelLogs_' + vehicle)) || [];
+
+      const newEntry = {
+        vehicle,
+        date,
+        days,
+        operator,
+        driver,
+        mileage,
+        distance,
+        liters,
+        notes,
+      };
+
+      if (editIndex !== null) {
+        logs[editIndex] = newEntry;
+        editIndex = null;
+        addBtn.textContent = "Add Entry";
+        cancelEditBtn.style.display = "none";
+      } else {
+        logs.push(newEntry);
+      }
+
+      localStorage.setItem('fuelLogs_' + vehicle, JSON.stringify(logs));
+      loadVehicleData();
+      clearInputs();
+    });
+
+    cancelEditBtn.addEventListener('click', () => {
+      resetEditState();
+      clearInputs();
+    });
+
+    // Edit entry
+    function editEntry(index) {
+      const logs = JSON.parse(localStorage.getItem('fuelLogs_' + currentVehicle)) || [];
+      const entry = logs[index];
+      if (!entry) return;
+
+      dateInput.value = entry.date;
+      daysInput.value = entry.days || "";
+      operatorInput.value = entry.operator || "";
+      driverInput.value = entry.driver || "";
+      mileageInput.value = entry.mileage || "";
+      distanceInput.value = entry.distance || "";
+      litersInput.value = entry.liters || "";
+      notesInput.value = entry.notes || "";
+
+      editIndex = index;
+      addBtn.textContent = "Update Entry";
+      cancelEditBtn.style.display = "inline-block";
+    }
+
+    // Delete entry
+    function deleteEntry(index) {
+      if (!confirm("Are you sure you want to delete this entry?")) return;
+      const logs = JSON.parse(localStorage.getItem('fuelLogs_' + currentVehicle)) || [];
+      logs.splice(index, 1);
+      localStorage.setItem('fuelLogs_' + currentVehicle, JSON.stringify(logs));
+      loadVehicleData();
+    }
+
+    // Reset editing state
+    function resetEditState() {
+      editIndex = null;
+      addBtn.textContent = "Add Entry";
+      cancelEditBtn.style.display = "none";
+    }
+
+    // Clear form inputs
+    function clearInputs() {
+      dateInput.value = "";
+      daysInput.value = "";
+      operatorInput.value = "";
+      driverInput.value = "";
+      mileageInput.value = "";
+      distanceInput.value = "";
+      litersInput.value = "";
+      notesInput.value = "";
+    }
+
+    // Export to Excel (simple CSV export)
+    function exportToExcel(tableBodyId, filename = 'Export') {
+      const rows = document.querySelectorAll(`#${tableBodyId} tr`);
+      if (rows.length === 0) {
+        alert("No data to export.");
+        return;
+      }
+      let csv = "Vehicle,Date,Days,Operator,Driver,Mileage (km),Distance (km),Fuel (L),Km/L,Notes\n";
+      rows.forEach(row => {
+        const cols = row.querySelectorAll('td');
+        const rowData = [];
+        cols.forEach((col, idx) => {
+          if (idx === cols.length - 1) return; // skip action buttons
+          let text = col.innerText.replace(/"/g, '""'); // Escape quotes
+          rowData.push(`"${text}"`);
+        });
+        csv += rowData.join(",") + "\n";
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename + ".csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // On vehicle select change helper function
+    function onVehicleChange() {
+      // Triggered on select change, handled above by event listener
+    }
+
+    // Initialization
+    window.onload = () => {
+      checkLogin();
+    };
+  </script>
+</body>
+</html>
